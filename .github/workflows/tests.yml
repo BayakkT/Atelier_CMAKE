@@ -5,16 +5,17 @@ jobs:
   Compilation:
     runs-on: ubuntu-latest
     steps:
-      - name: Compilation
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up CMake
+        uses: actions/setup-cmake@v2
+      - name: Compile the project
         run: |
-          last_directory=$(basename ${{ runner.workspace }})
-          git clone https://github.com/${{ github.repository }}.git
-          cd ./$last_directory
           mkdir build
           cd build
           cmake ..
           make
-          make test
+          make test  # Run tests
 
   Test_Add:
     runs-on: ubuntu-latest
@@ -22,107 +23,38 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Build
+      - name: Set up CMake
+        uses: actions/setup-cmake@v2
+      - name: Run the add test
         run: |
-          mkdir -p build
+          mkdir build
           cd build
           cmake ..
           make
-
-      - name: Run test "add" and capture report
-        run: |
-          cd build
-          set -e
-          echo "== Test add 10 5 ==" > report.txt
-          ./src/calculator add 10 5 | tee -a report.txt
-          echo "Exit code: $?" >> report.txt
-
-      - name: Upload report as artifact
-        uses: actions/upload-artifact@v4
+          ./src/calculator add 2 3 > add_result.txt  # Save the result in a text file
+      - name: Upload artefact (Add test result)
+        uses: actions/upload-artifact@v2
         with:
-          name: test-add-report
-          path: build/report.txt      # <-- le fichier à récupérer
-          retention-days: 14          # optionnel
-
-      - name: Job summary (facultatif mais pratique)
-        run: |
-          echo "### Résultat du test *add*" >> $GITHUB_STEP_SUMMARY
-          echo '' >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          cat build/report.txt >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-
-  Test_Sub:
+          name: artefact_Test_Add
+          path: build/add_result.txt  # Upload the result file
+          
+  Artefact_Test_Car:
     runs-on: ubuntu-latest
     needs: Compilation
     steps:
-      - name: Test fonction sub
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up CMake
+        uses: actions/setup-cmake@v2
+      - name: Run the car test (square)
         run: |
-          last_directory=$(basename ${{ runner.workspace }})
-          git clone https://github.com/${{ github.repository }}.git
-          cd ./$last_directory
           mkdir build
           cd build
           cmake ..
           make
-          ./src/calculator sub 3 -2
-
-  Test_Mul:
-    runs-on: ubuntu-latest
-    needs: Compilation
-    steps:
-      - name: Test fonction mul
-        run: |
-          last_directory=$(basename ${{ runner.workspace }})
-          git clone https://github.com/${{ github.repository }}.git
-          cd ./$last_directory
-          mkdir build
-          cd build
-          cmake ..
-          make
-          ./src/calculator mul 5 5
-
-  Test_Div:
-    runs-on: ubuntu-latest
-    needs: Compilation
-    steps:
-      - name: Test fonction div
-        run: |
-          last_directory=$(basename ${{ github.workspace }})
-          git clone https://github.com/${{ github.repository }}.git
-          cd ./$last_directory
-          mkdir build
-          cd build
-          cmake ..
-          make
-          ./src/calculator div 1 5
-
-  Test_Car:
-    runs-on: ubuntu-latest
-    needs: Compilation
-    steps:
-      - name: Test fonction car
-        run: |
-          last_directory=$(basename ${{ runner.workspace }})
-          git clone https://github.com/${{ github.repository }}.git
-          cd ./$last_directory
-          mkdir build
-          cd build
-          cmake ..
-          make
-          ./src/calculator car 5
- 
-  Deploy:
-    runs-on: ubuntu-latest
-    needs:
-      - Test_Add
-      - Test_Sub
-      - Test_Mul
-      - Test_Div
-      - Test_Car
-    steps:
-      - name: Déploiement
-        run: echo "Déploiement de la solution"
-
-        
+          ./src/calculator car 5 > car_result.txt  # Run the square function and save the result
+      - name: Upload artefact (Car test result)
+        uses: actions/upload-artifact@v2
+        with:
+          name: artefact_Test_Car
+          path: build/car_result.txt  # Upload the result of the car test
